@@ -1,0 +1,262 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                String   @id @default(uuid())
+  firebaseUid       String   @unique
+  email             String   @unique
+  name              String?
+  avatar            String?
+  emailVerified     Boolean  @default(false)
+  plan              Plan     @default(FREE)
+  planExpiresAt     DateTime?
+  customerId        String?  // LemonSqueezy customer ID
+  subscriptionId    String?  // LemonSqueezy subscription ID
+  isActive          Boolean  @default(true)
+  lastLoginAt       DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relationships
+  organizations     OrganizationMember[]
+  ownedOrganizations Organization[] @relation("OrganizationOwner")
+  links             Link[]
+  apiTokens         ApiToken[]
+  notifications     Notification[]
+
+  @@map("users")
+}
+
+model Organization {
+  id          String   @id @default(uuid())
+  name        String
+  slug        String   @unique
+  description String?
+  avatar      String?
+  plan        Plan     @default(FREE)
+  planExpiresAt DateTime?
+  customerId  String?  // LemonSqueezy customer ID
+  subscriptionId String? // LemonSqueezy subscription ID
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Owner relationship
+  ownerId     String
+  owner       User     @relation("OrganizationOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+
+  // Relationships
+  members     OrganizationMember[]
+  links       Link[]
+  domains     Domain[]
+  branding    Branding?
+  apiTokens   ApiToken[]
+
+  @@map("organizations")
+}
+
+model OrganizationMember {
+  id             String   @id @default(uuid())
+  role           Role     @default(MEMBER)
+  invitedAt      DateTime @default(now())
+  joinedAt       DateTime?
+  isActive       Boolean  @default(true)
+
+  // Relationships
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, organizationId])
+  @@map("organization_members")
+}
+
+model Link {
+  id              String    @id @default(uuid())
+  shortCode       String    @unique
+  originalUrl     String
+  title           String?
+  description     String?
+  tags            String[]
+  
+  // Expiry settings
+  expiresAt       DateTime?
+  maxClicks       Int?
+  currentClicks   Int       @default(0)
+  
+  // Status and health
+  isActive        Boolean   @default(true)
+  healthStatus    HealthStatus @default(UNKNOWN)
+  lastHealthCheck DateTime?
+  
+  // Metadata
+  password        String?
+  enableTracking  Boolean   @default(true)
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relationships
+  userId          String?
+  user            User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  organizationId  String?
+  organization    Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  domainId        String?
+  domain          Domain?   @relation(fields: [domainId], references: [id], onDelete: SetNull)
+  
+  clicks          Click[]
+  notifications   Notification[]
+
+  @@map("links")
+}
+
+model Domain {
+  id            String   @id @default(uuid())
+  domain        String   @unique
+  isDefault     Boolean  @default(false)
+  isVerified    Boolean  @default(false)
+  sslEnabled    Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relationships
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  links          Link[]
+
+  @@map("domains")
+}
+
+model Branding {
+  id              String   @id @default(uuid())
+  logo            String?
+  favicon         String?
+  primaryColor    String   @default("#3B82F6")
+  secondaryColor  String   @default("#8B5CF6")
+  customCss       String?
+  redirectTitle   String?
+  redirectMessage String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relationships
+  organizationId  String   @unique
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("branding")
+}
+
+model Click {
+  id          String   @id @default(uuid())
+  timestamp   DateTime @default(now())
+  
+  // Request data
+  ipAddress   String
+  userAgent   String?
+  referer     String?
+  
+  // Parsed data
+  country     String?
+  city        String?
+  device      String?
+  browser     String?
+  os          String?
+  
+  // Relationships
+  linkId      String
+  link        Link     @relation(fields: [linkId], references: [id], onDelete: Cascade)
+
+  @@map("clicks")
+}
+
+model ApiToken {
+  id          String   @id @default(uuid())
+  name        String
+  token       String   @unique
+  scopes      String[] // ['read', 'write', 'admin']
+  lastUsedAt  DateTime?
+  expiresAt   DateTime?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relationships
+  userId         String?
+  user           User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("api_tokens")
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  type      NotificationType
+  title     String
+  message   String
+  data      Json?
+  isRead    Boolean          @default(false)
+  sentAt    DateTime?
+  createdAt DateTime         @default(now())
+
+  // Relationships
+  userId    String?
+  user      User?            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  linkId    String?
+  link      Link?            @relation(fields: [linkId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+model HealthCheck {
+  id          String       @id @default(uuid())
+  url         String
+  status      HealthStatus
+  statusCode  Int?
+  responseTime Int?        // in milliseconds
+  error       String?
+  checkedAt   DateTime     @default(now())
+
+  @@map("health_checks")
+}
+
+// Enums
+enum Plan {
+  FREE
+  STARTER
+  PRO
+  ENTERPRISE
+}
+
+enum Role {
+  OWNER
+  ADMIN
+  MEMBER
+  VIEWER
+}
+
+enum HealthStatus {
+  HEALTHY
+  WARNING
+  ERROR
+  UNKNOWN
+}
+
+enum NotificationType {
+  LINK_EXPIRED
+  LINK_HEALTH_ISSUE
+  HIGH_TRAFFIC
+  PLAN_LIMIT_REACHED
+  SUBSCRIPTION_UPDATED
+  TEAM_MEMBER_ADDED
+}
