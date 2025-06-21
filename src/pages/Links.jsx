@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
+import AddLinkModal from '../components/AddLinkModal';
 import { 
   Plus, 
   Search, 
@@ -16,8 +17,8 @@ import {
 const Links = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
-
-  const links = [
+  const [showAddLinkModal, setShowAddLinkModal] = useState(false);
+  const [links, setLinks] = useState([
     {
       id: 1,
       originalUrl: 'https://example.com/product-launch-2024',
@@ -73,7 +74,7 @@ const Links = () => {
       lastChecked: '4 min ago',
       tags: ['newsletter', 'marketing']
     }
-  ];
+  ]);
 
   const getStatusIcon = (status) => {
     switch (status) {
@@ -107,6 +108,24 @@ const Links = () => {
     // TODO: Add toast notification
   };
 
+  const handleSaveLink = async (linkData) => {
+    // Add the new link to the list
+    const newLink = {
+      ...linkData,
+      id: links.length + 1,
+      lastChecked: 'Just now'
+    };
+    setLinks(prev => [newLink, ...prev]);
+  };
+
+  const filteredLinks = links.filter(link => {
+    const matchesSearch = link.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         link.shortUrl.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         link.originalUrl.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = filterStatus === 'all' || link.status === filterStatus;
+    return matchesSearch && matchesStatus;
+  });
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -116,7 +135,10 @@ const Links = () => {
             <h1 className="text-3xl font-bold text-gray-900">Links</h1>
             <p className="text-gray-600">Manage and monitor all your smart links</p>
           </div>
-          <button className="mt-4 sm:mt-0 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-lg font-semibold hover:shadow-lg transition-all duration-200 flex items-center">
+          <button 
+            onClick={() => setShowAddLinkModal(true)}
+            className="mt-4 sm:mt-0 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-lg font-semibold hover:shadow-lg transition-all duration-200 flex items-center"
+          >
             <Plus className="w-5 h-5 mr-2" />
             Create Link
           </button>
@@ -183,7 +205,7 @@ const Links = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {links.map((link) => (
+                {filteredLinks.map((link) => (
                   <tr key={link.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4">
                       <div className="space-y-1">
@@ -252,8 +274,8 @@ const Links = () => {
         <div className="bg-white rounded-xl border border-gray-200 px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="text-sm text-gray-700">
-              Showing <span className="font-medium">1</span> to <span className="font-medium">5</span> of{' '}
-              <span className="font-medium">1,247</span> links
+              Showing <span className="font-medium">1</span> to <span className="font-medium">{filteredLinks.length}</span> of{' '}
+              <span className="font-medium">{links.length}</span> links
             </div>
             <div className="flex items-center space-x-2">
               <button className="px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors">
@@ -274,6 +296,12 @@ const Links = () => {
             </div>
           </div>
         </div>
+
+        <AddLinkModal
+          isOpen={showAddLinkModal}
+          onClose={() => setShowAddLinkModal(false)}
+          onSave={handleSaveLink}
+        />
       </div>
     </DashboardLayout>
   );
