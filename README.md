@@ -1,303 +1,205 @@
-# LinkGuardian Backend
+# LinkGuardian - Smart Link Management Platform
 
-A comprehensive, production-ready Express.js backend for the LinkGuardian SaaS platform - Smart Link Management with advanced analytics, health monitoring, and white-labeling capabilities.
+A comprehensive full-stack SaaS platform for smart link management with advanced analytics, health monitoring, and white-labeling capabilities.
 
-## 🚀 Features
+## 🏗️ Architecture
 
-### Core Features
-- **Link Management**: Create, update, delete short links with custom slugs
-- **Advanced Analytics**: Track clicks with geolocation, device, browser data
-- **Health Monitoring**: Automated link health checks with notifications
-- **White-Labeling**: Custom domains and branding for organizations
-- **Team Management**: Multi-user organizations with role-based access
-- **API Access**: RESTful API with token-based authentication
-- **Notifications**: Email and Slack notifications for important events
-- **Payments**: LemonSqueezy integration for subscription management
+This project is structured as a full-stack application:
 
-### Security Features
-- Firebase Authentication integration
-- JWT token validation
-- Rate limiting with Redis
-- Input validation and sanitization
-- CORS protection
-- Security headers with Helmet
-- IP anonymization for privacy
+- **Backend**: Express.js API server with PostgreSQL database
+- **Frontend**: React.js application with Vite
+- **Database**: PostgreSQL with Prisma ORM
+- **Cache**: Redis for rate limiting and caching
+- **Authentication**: Firebase Auth integration
 
-### Technical Features
-- PostgreSQL with Prisma ORM
-- Redis for caching and rate limiting
-- Comprehensive error handling
-- Request logging and monitoring
-- Health check endpoints
-- Swagger API documentation
-- Docker support
-- Automated testing setup
-
-## 🛠 Tech Stack
-
-- **Runtime**: Node.js 18+
-- **Framework**: Express.js
-- **Database**: PostgreSQL (Neon)
-- **ORM**: Prisma
-- **Cache**: Redis
-- **Authentication**: Firebase Auth
-- **Email**: Resend / SMTP
-- **Payments**: LemonSqueezy
-- **Documentation**: Swagger/OpenAPI
-- **Containerization**: Docker
-
-## 📦 Installation
+## 🚀 Quick Start
 
 ### Prerequisites
+
 - Node.js 18+
 - PostgreSQL database
-- Redis server
-- Firebase project
-- Environment variables (see `.env.example`)
+- Redis server (optional)
+- Firebase project for authentication
 
-### Quick Start
+### Installation
 
-1. **Clone and install dependencies**
+1. **Clone the repository**
 ```bash
-git clone <repository>
-cd linkguardian-backend
-npm install
+git clone <repository-url>
+cd linkguardian
 ```
 
-2. **Set up environment variables**
+2. **Install all dependencies**
 ```bash
+npm run install:all
+```
+
+3. **Set up environment variables**
+```bash
+cd backend
 cp .env.example .env
 # Edit .env with your configuration
 ```
 
-3. **Set up database**
+4. **Set up the database**
 ```bash
+cd backend
 npm run db:generate
 npm run db:push
 npm run db:seed
 ```
 
-4. **Start development server**
+5. **Start the development servers**
 ```bash
+# From the root directory
 npm run dev
 ```
 
-### Docker Setup
+This will start:
+- Backend API server on http://localhost:5000
+- Frontend development server on http://localhost:3000
 
-1. **Start with Docker Compose**
-```bash
-docker-compose up -d
+## 📁 Project Structure
+
+```
+linkguardian/
+├── backend/                 # Express.js API server
+│   ├── src/
+│   │   ├── config/         # Configuration files
+│   │   ├── controllers/    # Route controllers
+│   │   ├── middleware/     # Express middleware
+│   │   ├── routes/         # API routes
+│   │   ├── services/       # Business logic
+│   │   ├── utils/          # Utility functions
+│   │   └── server.js       # Application entry point
+│   ├── prisma/             # Database schema and migrations
+│   ├── .env.example        # Environment variables template
+│   └── package.json
+├── frontend/               # React.js application
+│   ├── src/
+│   │   ├── components/     # React components
+│   │   ├── pages/          # Page components
+│   │   ├── contexts/       # React contexts
+│   │   ├── services/       # API services
+│   │   └── config/         # Configuration
+│   ├── public/             # Static assets
+│   └── package.json
+└── package.json            # Root package.json with scripts
 ```
 
-2. **Run database migrations**
-```bash
-docker-compose exec app npm run db:push
-docker-compose exec app npm run db:seed
-```
+## 🔧 Development
 
-## 🔧 Configuration
+### Available Scripts
 
-### Environment Variables
+From the root directory:
 
-Key environment variables (see `.env.example` for complete list):
+- `npm run dev` - Start both frontend and backend in development mode
+- `npm run install:all` - Install dependencies for all packages
+- `npm run backend:dev` - Start only the backend server
+- `npm run frontend:dev` - Start only the frontend server
+
+### Backend Scripts
+
+From the `backend/` directory:
+
+- `npm run dev` - Start development server with nodemon
+- `npm run start` - Start production server
+- `npm run db:generate` - Generate Prisma client
+- `npm run db:push` - Push schema changes to database
+- `npm run db:migrate` - Run database migrations
+- `npm run db:seed` - Seed database with demo data
+- `npm run db:studio` - Open Prisma Studio
+
+### Frontend Scripts
+
+From the `frontend/` directory:
+
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run preview` - Preview production build
+
+## 🌐 API Integration
+
+The frontend communicates with the backend through:
+
+1. **Development**: Vite proxy configuration routes `/api/*` requests to `http://localhost:5000`
+2. **Production**: Configure `API_BASE_URL` in `frontend/src/config/api.js`
+
+### API Service
+
+The frontend includes a centralized API service (`frontend/src/services/api.js`) that handles:
+
+- Authentication headers
+- Error handling
+- Request/response formatting
+- Token management
+
+## 🔐 Environment Variables
+
+All environment variables are stored in `backend/.env`. The frontend doesn't require a separate `.env` file.
+
+Key variables to configure:
 
 ```env
 # Database
 DATABASE_URL="postgresql://username:password@localhost:5432/linkguardian"
 
-# Redis
-REDIS_URL="redis://localhost:6379"
-
-# Firebase
+# Firebase Authentication
 FIREBASE_PROJECT_ID=your-project-id
 FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
 FIREBASE_CLIENT_EMAIL=firebase-adminsdk-xxxxx@your-project.iam.gserviceaccount.com
 
-# Email
-RESEND_API_KEY=re_xxxxxxxxxxxxxxxxxxxxxxxxxx
-
-# LemonSqueezy
-LEMONSQUEEZY_API_KEY=your-api-key
-LEMONSQUEEZY_WEBHOOK_SECRET=your-webhook-secret
-```
-
-### Firebase Setup
-
-1. Create a Firebase project
-2. Enable Authentication
-3. Generate a service account key
-4. Add the credentials to your environment variables
-
-## 📚 API Documentation
-
-### Endpoints Overview
-
-- **Authentication**: `/api/v1/auth/*`
-- **Links**: `/api/v1/links/*`
-- **Analytics**: `/api/v1/analytics/*`
-- **Organizations**: `/api/v1/organizations/*`
-- **Domains**: `/api/v1/domains/*`
-- **API Tokens**: `/api/v1/api-tokens/*`
-- **Admin**: `/api/v1/admin/*`
-
-### Interactive Documentation
-
-Visit `/docs` when the server is running to access the Swagger UI documentation.
-
-### Authentication
-
-The API supports two authentication methods:
-
-1. **Firebase JWT** (for web/mobile apps)
-```bash
-Authorization: Bearer <firebase-jwt-token>
-```
-
-2. **API Keys** (for server-to-server)
-```bash
-X-API-Key: lg_your_api_key_here
-```
-
-### Example Requests
-
-**Create a link:**
-```bash
-curl -X POST http://localhost:3000/api/v1/links \
-  -H "Authorization: Bearer <token>" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "originalUrl": "https://example.com",
-    "title": "Example Site",
-    "tags": ["example", "demo"]
-  }'
-```
-
-**Get analytics:**
-```bash
-curl -X GET "http://localhost:3000/api/v1/analytics/links/abc123?startDate=2024-01-01&endDate=2024-01-31" \
-  -H "Authorization: Bearer <token>"
-```
-
-## 🔍 Monitoring & Health Checks
-
-### Health Endpoints
-
-- `/health` - Overall health status
-- `/health/ready` - Readiness check
-- `/health/live` - Liveness check
-
-### Monitoring Features
-
-- Request logging with unique IDs
-- Error tracking and reporting
-- Performance metrics
-- Database connection monitoring
-- Redis connection monitoring
-
-## 🧪 Testing
-
-```bash
-# Run tests
-npm test
-
-# Run tests in watch mode
-npm run test:watch
-
-# Run linting
-npm run lint
+# Server
+PORT=5000
+NODE_ENV=development
 ```
 
 ## 🚀 Deployment
 
-### Production Checklist
+### Backend Deployment
 
-- [ ] Set `NODE_ENV=production`
-- [ ] Configure production database
-- [ ] Set up Redis cluster
-- [ ] Configure email service
-- [ ] Set up monitoring
-- [ ] Configure SSL/TLS
-- [ ] Set up backup strategy
-- [ ] Configure log aggregation
+1. Set environment variables on your hosting platform
+2. Run database migrations: `npm run db:push`
+3. Start the server: `npm start`
 
-### Docker Deployment
+### Frontend Deployment
+
+1. Update `API_BASE_URL` in `frontend/src/config/api.js`
+2. Build the application: `npm run build`
+3. Deploy the `dist/` folder to your hosting platform
+
+### Full-Stack Deployment
+
+For platforms like Railway, Render, or Heroku:
+
+1. Set the root directory build command: `npm run install:all && npm run frontend:build`
+2. Set the start command: `npm run backend:start`
+3. Configure environment variables in the platform dashboard
+
+## 📚 API Documentation
+
+When the backend is running, visit:
+- **Swagger UI**: http://localhost:5000/docs
+- **OpenAPI JSON**: http://localhost:5000/docs/openapi.json
+
+## 🔍 Health Monitoring
+
+Health check endpoints:
+- **General Health**: http://localhost:5000/health
+- **Readiness**: http://localhost:5000/health/ready
+- **Liveness**: http://localhost:5000/health/live
+
+## 🧪 Testing
 
 ```bash
-# Build production image
-docker build -t linkguardian-backend .
+# Backend tests
+cd backend
+npm test
 
-# Run container
-docker run -d \
-  --name linkguardian-api \
-  -p 3000:3000 \
-  --env-file .env.production \
-  linkguardian-backend
+# Frontend tests (if configured)
+cd frontend
+npm test
 ```
-
-## 📊 Database Schema
-
-The application uses Prisma ORM with PostgreSQL. Key entities:
-
-- **Users**: User accounts and profiles
-- **Organizations**: Team/organization management
-- **Links**: Short links with metadata
-- **Clicks**: Analytics data for link clicks
-- **Domains**: Custom domain management
-- **ApiTokens**: API access tokens
-- **Notifications**: System notifications
-
-## 🔐 Security
-
-### Security Measures
-
-- Firebase Authentication integration
-- JWT token validation
-- Rate limiting (100 requests/15min by default)
-- Input validation with Joi
-- XSS protection
-- SQL injection prevention
-- CORS configuration
-- Security headers with Helmet
-- IP address anonymization
-
-### Rate Limiting
-
-Plan-based rate limits:
-- **Free**: 100 requests/hour, 10 links
-- **Starter**: 1,000 requests/hour, 100 links
-- **Pro**: 10,000 requests/hour, 1,000 links
-- **Enterprise**: 100,000 requests/hour, unlimited links
-
-## 🔧 Development
-
-### Project Structure
-
-```
-src/
-├── config/          # Configuration files
-├── controllers/     # Route controllers
-├── middleware/      # Express middleware
-├── routes/          # API routes
-├── services/        # Business logic
-├── utils/           # Utility functions
-├── scripts/         # Database seeds, etc.
-└── server.js        # Application entry point
-```
-
-### Code Style
-
-- ESLint with Standard config
-- Prettier for formatting
-- Conventional commits
-- JSDoc for documentation
-
-### Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests
-5. Submit a pull request
 
 ## 📝 License
 
@@ -305,17 +207,17 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## 🆘 Support
 
-- **Documentation**: `/docs` endpoint
+- **Documentation**: Visit `/docs` endpoint when server is running
 - **Issues**: GitHub Issues
 - **Email**: support@linkguardian.com
 
-## 🎯 Roadmap
+## 🎯 Next Steps
 
-- [ ] GraphQL API
-- [ ] Real-time analytics
-- [ ] Advanced A/B testing
-- [ ] Mobile SDKs
-- [ ] Advanced fraud detection
-- [ ] Multi-region deployment
-- [ ] Advanced reporting
-- [ ] Webhook system
+1. Copy `backend/.env.example` to `backend/.env` and configure your environment variables
+2. Set up your PostgreSQL database and update `DATABASE_URL`
+3. Configure Firebase authentication
+4. Run `npm run install:all` to install dependencies
+5. Run `npm run dev` to start development servers
+6. Visit http://localhost:3000 to see the application
+
+The application will be fully functional with just the backend `.env` configuration!

@@ -11,30 +11,25 @@ import {
   Settings,
   BarChart3
 } from 'lucide-react';
+import apiService from '../services/api.js';
 
 const AddLinkModal = ({ isOpen, onClose, onSave }) => {
   const [formData, setFormData] = useState({
     originalUrl: '',
-    customSlug: '',
+    shortCode: '',
     title: '',
     description: '',
     tags: [],
-    expirationDate: '',
+    expiresAt: '',
     password: '',
     enablePassword: false,
-    enableTracking: true,
-    domain: 'lg.co'
+    enableTracking: true
   });
   
   const [currentTag, setCurrentTag] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
-
-  const domains = [
-    { id: 'lg.co', name: 'lg.co', type: 'default' },
-    { id: 'custom.com', name: 'custom.com', type: 'custom' }
-  ];
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -82,8 +77,8 @@ const AddLinkModal = ({ isOpen, onClose, onSave }) => {
       newErrors.originalUrl = 'Please enter a valid URL';
     }
     
-    if (formData.customSlug && !isValidSlug(formData.customSlug)) {
-      newErrors.customSlug = 'Slug can only contain letters, numbers, and hyphens';
+    if (formData.shortCode && !isValidSlug(formData.shortCode)) {
+      newErrors.shortCode = 'Slug can only contain letters, numbers, and hyphens';
     }
     
     if (formData.enablePassword && !formData.password) {
@@ -107,11 +102,6 @@ const AddLinkModal = ({ isOpen, onClose, onSave }) => {
     return /^[a-zA-Z0-9-]+$/.test(slug);
   };
 
-  const generateShortUrl = () => {
-    const slug = formData.customSlug || Math.random().toString(36).substring(2, 8);
-    return `${formData.domain}/${slug}`;
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -123,31 +113,35 @@ const AddLinkModal = ({ isOpen, onClose, onSave }) => {
     
     try {
       const linkData = {
-        ...formData,
-        shortUrl: generateShortUrl(),
-        createdAt: new Date().toISOString(),
-        clicks: 0,
-        status: 'healthy'
+        originalUrl: formData.originalUrl,
+        shortCode: formData.shortCode || undefined,
+        title: formData.title,
+        description: formData.description,
+        tags: formData.tags,
+        expiresAt: formData.expiresAt || undefined,
+        password: formData.enablePassword ? formData.password : undefined,
+        enableTracking: formData.enableTracking
       };
       
-      await onSave(linkData);
+      const response = await apiService.createLink(linkData);
+      await onSave(response.data.link);
       onClose();
       
       // Reset form
       setFormData({
         originalUrl: '',
-        customSlug: '',
+        shortCode: '',
         title: '',
         description: '',
         tags: [],
-        expirationDate: '',
+        expiresAt: '',
         password: '',
         enablePassword: false,
-        enableTracking: true,
-        domain: 'lg.co'
+        enableTracking: true
       });
     } catch (error) {
       console.error('Error creating link:', error);
+      setErrors({ submit: error.message });
     } finally {
       setIsLoading(false);
     }
@@ -176,6 +170,12 @@ const AddLinkModal = ({ isOpen, onClose, onSave }) => {
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
+          {errors.submit && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+              {errors.submit}
+            </div>
+          )}
+
           {/* Original URL */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -201,62 +201,25 @@ const AddLinkModal = ({ isOpen, onClose, onSave }) => {
             )}
           </div>
 
-          {/* Domain and Custom Slug */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Domain
-              </label>
-              <select
-                name="domain"
-                value={formData.domain}
-                onChange={handleChange}
-                className="block w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-                {domains.map((domain) => (
-                  <option key={domain.id} value={domain.id}>
-                    {domain.name} {domain.type === 'custom' && '(Custom)'}
-                  </option>
-                ))}
-              </select>
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Custom Slug (Optional)
-              </label>
-              <input
-                type="text"
-                name="customSlug"
-                value={formData.customSlug}
-                onChange={handleChange}
-                placeholder="my-custom-link"
-                className={`block w-full px-3 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                  errors.customSlug ? 'border-red-300' : 'border-gray-300'
-                }`}
-              />
-              {errors.customSlug && (
-                <p className="mt-1 text-sm text-red-600">{errors.customSlug}</p>
-              )}
-            </div>
+          {/* Custom Slug */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Custom Slug (Optional)
+            </label>
+            <input
+              type="text"
+              name="shortCode"
+              value={formData.shortCode}
+              onChange={handleChange}
+              placeholder="my-custom-link"
+              className={`block w-full px-3 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                errors.shortCode ? 'border-red-300' : 'border-gray-300'
+              }`}
+            />
+            {errors.shortCode && (
+              <p className="mt-1 text-sm text-red-600">{errors.shortCode}</p>
+            )}
           </div>
-
-          {/* Preview */}
-          {formData.originalUrl && (
-            <div className="p-4 bg-gray-50 rounded-lg">
-              <div className="text-sm text-gray-600 mb-1">Short URL Preview:</div>
-              <div className="flex items-center space-x-2">
-                <code className="text-blue-600 font-medium">{generateShortUrl()}</code>
-                <button
-                  type="button"
-                  className="text-gray-400 hover:text-gray-600"
-                  onClick={() => navigator.clipboard.writeText(generateShortUrl())}
-                >
-                  <Copy className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-          )}
 
           {/* Title and Description */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -349,8 +312,8 @@ const AddLinkModal = ({ isOpen, onClose, onSave }) => {
                   </div>
                   <input
                     type="datetime-local"
-                    name="expirationDate"
-                    value={formData.expirationDate}
+                    name="expiresAt"
+                    value={formData.expiresAt}
                     onChange={handleChange}
                     className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
